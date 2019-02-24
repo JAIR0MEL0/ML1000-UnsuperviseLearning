@@ -37,3 +37,10 @@ Mean or average linkage clustering: It computes all pairwise dissimilarities bet
 
 Centroid linkage clustering: It computes the dissimilarity between the centroid for cluster 1 (a mean vector of length p variables) and the centroid for cluster 2.
 Ward’s minimum variance method: It minimizes the total within-cluster variance. At each step the pair of clusters with minimum between-cluster distance are merged.
+
+## Data Preparation
+Below are the main recommendations for using Hierarchical Clustering analysis:
+1. Rows are observations (individuals) and columns are variables
+2. Any missing value in the data must be removed or estimated.
+3. The data must be standardized (i.e., scaled) to make variables comparable.
+
