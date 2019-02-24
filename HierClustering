@@ -1,0 +1,239 @@
+#INSTALL AND LOAD PACKAGES ################################
+library(cluster)    # clustering algorithms
+library(factoextra) # clustering visualization
+library(dendextend) # for comparing two dendrograms
+
+# IMPORT DATA ##############################################
+
+getwd()
+WRdata=read.csv("~/desktop/ML/YORK/Assigment2/wine-reviews/winemag-data_first150k.csv", header = TRUE, dec = ".", stringsAsFactors = FALSE)
+str(WRdata)
+summary(WRdata)
+
+#Removing any missing value that might be present in the WRdata
+WRdata <- na.omit(WRdata)
+
+nrow(WRdata)
+head(WRdata)
+#Subset to only use predictors suitable for Cluster analysis
+WRclData <- WRdata[1:5000,c('points','price')]
+
+str(WRclData)
+
+#As we don’t want the clustering algorithm to depend to an arbitrary variable unit, we start by scaling/standardizing the data using the R function scale:
+WRclData <- scale(WRclData)
+
+str(WRclData)
+
+
+
+
+#############    Analysis     #############
+#There are different methods for computing hierarchical clustering. The commonly used functions are:
+
+# Agglomerative hierarchical clustering (HC): hclust [stats Library] and agnes [cluster library]
+#Divisive HC: diana  [in cluster package]
+
+#Agglomerative Hierarchical Clustering
+#We perform agglomerative HC with hclust. We compute the dissimilarity values: dist()
+#Then, feed these values into hclust and specify the agglomeration method 
+#(i.e. “complete”, “average”, “single”, “ward.D”).
+
+# Dissimilarity matrix
+WRdiss <- dist(WRclData, method = "euclidean")
+
+##############   1.0  Hierarchical clustering using Complete Linkage   ###############
+WRhc_hclust <- hclust(WRdiss, method = "complete" )
+
+# Plot the obtained dendrogram
+plot(WRhc_hclust, cex = 0.6, hang = -1)
+
+
+
+#As an alternatively, we can use the agnes function which behaves very similar. 
+#We can also get the agglomerative coefficient with agnes function.
+#The agglomerative coefficient measures the amount of clustering structure found 
+#(values closer to 1 suggest strong clustering structure).
+
+#############   2.0 Compute with agnes   ###################
+WRhc_agnes <- agnes(WRclData, method = "complete")
+
+# Agglomerative coefficient
+WRhc_agnes$ac
+##[1] 0.9996042
+
+# The Agglomerative coefficient allows us to find certain hierarchical clustering methods
+# that can identify stronger clustering structures.  Here we see that Ward’s method 
+# identifies the strongest clustering structure of the four methods assessed.
+
+# methods to assess
+m <- c( "average", "single", "complete", "ward")
+names(m) <- c( "average", "single", "complete", "ward")
+
+# function to compute coefficient
+ac <- function(x) {
+  agnes(WRclData, method = x)$ac
+}
+
+map_dbl(m, ac)
+#average    single  complete      ward 
+#0.9994602 0.9985469 0.9996042 0.9998740 
+
+
+
+###########   3.0 Similar to before we can visualize the dendrogram:  ###########
+
+WRhc_agnes_ward <- agnes(WRclData, method = "ward")
+pltree(WRhc_agnes_ward, cex = 0.6, hang = -1, main = "Dendrogram of agnes") 
+
+
+
+
+##############      4.0   Compute divisive hierarchical clustering       ###################
+WRhc_diana <- diana(WRclData)
+
+# Divise coefficient; amount of clustering structure found
+WRhc_diana$dc
+## [1] 0.9995645
+
+# plot dendrogram
+pltree(WRhc_diana, cex = 0.6, hang = -1, main = "Dendrogram of diana")
+
+#The height of the cut to the dendrogram controls the number of clusters obtained. 
+#It plays the same role as the k in k-means clustering. In order to identify sub-groups (i.e. clusters), 
+#we can cut the dendrogram with cutree:
+
+#Conclusion of diana is that it works similar to agnes.
+
+############       5.0 Ward's method           #############
+
+#In the previous analysis, each leaf of the Dendrogram corresponds to one observation. As we move up the tree, 
+#observations that are similar to each other are combined into branches, which are themselves fused at a higher
+#height.
+
+#The height of the fusion, provided on the vertical axis, indicates the (dis)similarity between two observations.
+#The higher the height of the fusion, the less similar the observations are. 
+#Note: conclusions about the proximity of two observations can only be based on the height where branches 
+#containing those two observations first are fused. We cannot use the proximity of two observations 
+#along the horizontal axis as a criteria of their similarity.
+
+
+WRhc_wardD2 <- hclust(WRdiss, method = "ward.D2" )
+
+# Cut tree into 4 groups
+sub_grp <- cutree(WRhc_wardD2, k = 4)
+
+# Number of members in each cluster
+table(sub_grp)
+sub_grp
+#    1    2    3    4 
+#  824 2542 1628    6 
+
+
+
+#We can also use the cutree output to add the the cluster each observation belongs to to our 
+#original data.
+##Limiting the original data to 5000 as per Clustering analysis.  This is for Mutate to work
+data <- WRdata[1:5000,]
+
+
+data %>%
+  mutate(cluster = sub_grp) %>%
+  head
+
+
+#It’s also possible to draw the dendrogram with a border around the 4 clusters. 
+#The argument border is used to specify the border colors for the rectangles:
+
+plot(WRhc_wardD2, cex = 0.6)
+rect.hclust(WRhc_wardD2, k = 4, border = 2:5)
+
+
+####################    6.0      Visualize     ########################
+
+#fviz_cluster function from the factoextra package helps to visualize the result of a similar clustering
+#as k-means, 
+fviz_cluster(list(data = WRclData, cluster = sub_grp))
+
+#Cutree with agnes and diana:
+
+# Cut agnes() tree into 4 groups
+WRhc_a <- agnes(WRclData, method = "ward")
+cutree(as.hclust(WRhc_a), k = 4)
+
+# Cut diana() tree into 4 groups
+WRhc_d <- diana(WRclData)
+cutree(as.hclust(WRhc_d), k = 4)
+
+
+####################   7.0  Comparison of two hierarchical clustering      ###################
+
+
+#Finally, let's compare two dendrograms with complete linkage and versus Ward’s method.
+
+# Compute distance matrix
+res.dist <- dist(WRclData, method = "euclidean")
+
+# Compute 2 hierarchical clusterings
+hc1 <- hclust(res.dist, method = "complete")
+hc2 <- hclust(res.dist, method = "ward.D2")
+
+# Create two dendrograms
+dend1 <- as.dendrogram (hc1)
+dend2 <- as.dendrogram (hc2)
+
+
+#Tanglegram function plots the two dendrograms, side by side, with their labels connected by lines.
+
+#The output shows which a unique nodes of combination of labels/items that are not present in the 
+#other tree, highlighted with dashed lines. The quality of the alignment of the two trees are   
+# measured using entanglement. 
+#Entanglement is a measure between 1 (full entanglement) and 0 (no entanglement). 
+tanglegram(dend1, dend2)
+
+#A lower entanglement coefficient corresponds to a good alignment.
+
+dend_list <- dendlist(dend1, dend2)
+
+tanglegram(dend1, dend2,
+           highlight_distinct_edges = FALSE, # Turn-off dashed lines
+           common_subtrees_color_lines = FALSE, # Turn-off line colors
+           common_subtrees_color_branches = TRUE, # Color common branches 
+           main = paste("entanglement =", round(entanglement(dend_list), 2))
+)
+
+
+
+
+#####################    8.0 Determining Optimal Clusters     #########################
+
+# 8.1 Elbow Method
+#To perform the elbow method we just need to change the second argument in fviz_nbclust to FUN = hcut.
+
+fviz_nbclust(WRclData, FUN = hcut, method = "wss")
+
+# 8.2 Average Silhouette Method
+#To perform the average silhouette method we follow a similar process.
+
+fviz_nbclust(WRclData, FUN = hcut, method = "silhouette")
+
+# 8.3 Gap Statistic Method
+#And the process is quite similar to perform the gap statistic method.
+
+gap_stat <- clusGap(WRclData, FUN = hcut, nstart = 25, K.max = 10, B = 50)
+fviz_gap_stat(gap_stat)
+
+
+######################   9.0   Conclusion   #######################
+#Clustering is a very useful tool for data analysis in the unsupervised setting.
+#Bellow are some items we must consider while performing hierarchical clustering analysis.
+
+#  1. What dissimilarity measure should be used?
+#  2. What type of linkage should be used?
+#  3. Where should we cut the dendrogram in order to obtain clusters?
+
+#Each of these decisions has a strong impact on the results obtained.
+
+#In practice, we try several different choices, and look for the one with the most useful or 
+#interpretable solution. With these methods, there is no single right answer - any solution 
+#that exposes some interesting aspects of the data should be considered.
