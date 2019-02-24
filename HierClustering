@@ -167,8 +167,9 @@ WRhc_d <- diana(WRclData)
 cutree(as.hclust(WRhc_d), k = 4)
 
 
-####################   7.0  Comparison of two hierarchical clustering      ###################
+####################   7.0  Comparison of two hierarchical clustering   (Optional)   ###################
 
+#This section has a heavy computing demand.  Skip it if you plan to have an analysis the same day.
 
 #Finally, let's compare two dendrograms with complete linkage and versus Ward’s method.
 
