@@ -52,7 +52,7 @@ Wine Review Case study hjas a large number of observartions which makes a great 
 
 # The Objective
 
-
+To uncover patterns in these reviews (if any).
 
 
 ## How do we measure the dissimilarity between two clusters of observations? 
