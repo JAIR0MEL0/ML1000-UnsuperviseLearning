@@ -32,10 +32,10 @@ Below are the main recommendations for using Hierarchical Clustering analysis:
 
 # Modeling
 
-# K-Mode
+## K-Mode
 
 
-# K-Means
+## K-Means
 
 
 
@@ -91,6 +91,25 @@ We can use the silhouette function in the cluster package to compuate the averag
 
 ## Gap Statistic Method
 The gap statistic has been published by R. Tibshirani, G. Walther, and T. Hastie (Standford University, 2001). The approach can be applied to any clustering method (i.e. K-means clustering, hierarchical clustering). The gap statistic compares the total intracluster variation for different values of k with their expected values under null reference distribution of the data (i.e. a distribution with no obvious clustering). The reference dataset is generated using Monte Carlo simulations of the sampling process. That is, for each variable (xi), in the data set we compute its range, [min(xi),max(xj)] and generate values for the n points uniformly from the interval min to max.
+
+
+
+## Convergence of clusters
+A good criteria to select clusters is selecting the clusters with population between 5-30% of the overall base. 
+If any of the cluster is beyond the limit then we repeat the procedure with additional number of variables or a a different Clustering Algotithm for example K-mode, K-Means or Hierarchical Clustering.
+
+## Profiling of the clusters
+After validating the convergence of cluster analysis, we need to identify behavior of each cluster. Lets say we map Points and Price to each of the four clusters.
+
+------------------------------------------
+Cluster|  Point Range |    Price Range   |
+------------------------------------------
+1      |   40-50      |    200-300       |
+------------------------------------------
+2      |   60-90      |    400-600       |
+------------------------------------------
+3      |   90-        |    700-800       |
+
 
 
 
