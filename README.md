@@ -7,7 +7,7 @@ Hypothesis building : Identify all possible variables that can help us segment t
 
 a. Cabernet Sauvignon is mainly consume because the price
 
-b. Merlot has great potential to be reintroduce in US market
+b. Merlot has great potential to be reintroduced in the US market
 
 c. Shyraz from South America (Chile) is more pupolar than from US or Europe because the Quality
 
