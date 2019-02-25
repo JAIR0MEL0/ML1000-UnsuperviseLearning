@@ -1,12 +1,25 @@
 # Unsupervised Learning - 
-This is a Unsupervised Learning Algorithms using Clustering with a data set of Wine Reviews across the world following the CRISP-MD 
+This is a training tutorial of the Unsupervised Learning Algorithms focus on Clustering.  The study we will be using is the Wine Reviews dataset.  We will be following the CRISP-MD menthodology.
 
 ## Business Understanding
+
+Hypothesis building : Identify all possible variables that can help us segment the data reviews regardless of its availability. Lets try to come up with a list for this example.
+
+a. Red wine has more positive reviews for expensive wines than cheaper
+
+b. White wine is mainly consume at restaurant while Red wine is mainly consume at house parties 
+
+c. Local wineries are mainly producing red wine than white
+
+d. Local wineries have higher scored wines
+
+e. Best wine to sale on parties and festivals are White  
 
 ## Data Understanding:
 We will use as Data set a review of the Wines with different variarities across different regions and providence.
 https://www.kaggle.com/zynicide/wine-reviews
 Due to the large number set, we will extract a subset to increase computing power
+
 
 ## Data Preparation
 Below are the main recommendations for using Hierarchical Clustering analysis:
@@ -37,8 +50,7 @@ Wine Review Case study hjas a large number of observartions which makes a great 
 
 # The Objective
 
-Measure the (dis)similarity of observations using distance measures (i.e. Euclidean distance, Manhattan distance, etc.)
-In R, the Euclidean distance is used by default to measure the dissimilarity between each pair of observations. 
+
 
 
 ## How do we measure the dissimilarity between two clusters of observations? 
@@ -78,6 +90,9 @@ We can use the silhouette function in the cluster package to compuate the averag
 ## Gap Statistic Method
 The gap statistic has been published by R. Tibshirani, G. Walther, and T. Hastie (Standford University, 2001). The approach can be applied to any clustering method (i.e. K-means clustering, hierarchical clustering). The gap statistic compares the total intracluster variation for different values of k with their expected values under null reference distribution of the data (i.e. a distribution with no obvious clustering). The reference dataset is generated using Monte Carlo simulations of the sampling process. That is, for each variable (xi), in the data set we compute its range, [min(xi),max(xj)] and generate values for the n points uniformly from the interval min to max.
 
+
+
+
 # Conclusion
 Clustering is a very useful tool for data analysis in the unsupervised setting.
 Bellow are some items we must consider while performing hierarchical clustering analysis.
@@ -93,4 +108,4 @@ We try several different choices, and look for the one with the most useful or
 #interpretable solution. With these methods, there is no single right answer - any solution 
 #that exposes some interesting aspects of the data should be considered.
 
-# Now you are ready to read the code
+# Deployment
