@@ -5,15 +5,17 @@ This is a training tutorial of the Unsupervised Learning Algorithms focus on Clu
 
 Hypothesis building : Identify all possible variables that can help us segment the data reviews regardless of its availability. Lets try to come up with a list for this example.
 
-a. Red wine has more positive reviews for expensive wines than cheaper
+a. Cabernet Sauvignon is mainly consume because the price
 
-b. White wine is mainly consume at restaurant while Red wine is mainly consume at house parties 
+b. Merlot has great potential to be reintroduce in US market
 
-c. Local wineries are mainly producing red wine than white
+c. Shyraz from South America (Chile) is more pupolar than from US or Europe because the Quality
 
-d. Local wineries have higher scored wines
+d. Local wineries have more success producing wines because the low price
 
-e. Best wine to sale on parties and festivals are White  
+e. Best wine to sale on parties and festivals are Champagne Blend
+
+f. Resling can replace Pinot Noir or Cabernet Sauvignon in case of low season production
 
 ## Data Understanding:
 We will use as Data set a review of the Wines with different variarities across different regions and providence.
