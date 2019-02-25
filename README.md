@@ -13,7 +13,7 @@ c. Shyraz from South America (Chile) is more pupolar than from US or Europe beca
 
 d. Local wineries have more success producing wines because the low price
 
-e. Best wine to sale on parties and festivals are Champagne Blend
+e. Rose is the best cheap wine to sale because its flavor
 
 f. Resling can replace Pinot Noir or Cabernet Sauvignon in case of low season production
 
