@@ -1,25 +1,39 @@
-# Unsupervised Learning - Hierarchical Clustering Analysis
+# Unsupervised Learning - 
+This is a Unsupervised Learning Algorithms using Clustering with a data set of Wine Reviews across the world following the CRISP-MD 
 
-This is a Unsupervised Tutorial Training of Hierarchical Clustering using application of with Wine Reviews
+## Business Understanding
 
-## Source of the Data:
+## Data Understanding:
 We will use as Data set a review of the Wines with different variarities across different regions and providence.
 https://www.kaggle.com/zynicide/wine-reviews
 Due to the large number set, we will extract a subset to increase computing power
 
-# Concepts for Hierarchical Clustering Algorithms
+## Data Preparation
+Below are the main recommendations for using Hierarchical Clustering analysis:
+1. Rows are observations (individuals) and columns are variables
+2. Any missing value in the data must be removed or estimated.
+3. The data must be standardized (i.e., scaled) to make variables comparable.
 
+
+# Modeling
+
+# K-Mode
+
+
+# K-Means
+
+
+
+# Hierarchical Clustering Analysis
 Hierarchical clustering can be divided into two main types: agglomerative and divisive.
 
 ## Agglomerative clustering:
-It’s also known as AGNES (Agglomerative Nesting). It works in a bottom-up manner. That is, each object is initially considered as a single-element cluster (leaf). At each step of the algorithm, the two clusters that are the most similar are combined into a new bigger cluster (nodes). This procedure is iterated until all points are member of just one single big cluster (root) (see figure below). The result is a tree which can be plotted as a dendrogram.
-
-Agglomerative clustering is good at identifying small clusters.
+Or AGNES (Agglomerative Nesting) works in a bottom-up manner. That is, each object is initially considered as a single-element cluster (leaf). At each step of the algorithm, the two clusters that are the most similar are combined into a new bigger cluster (nodes). Agglomerative clustering is good at identifying small clusters.
 
 ## Divisive hierarchical clustering:
-It’s also known as DIANA (Divise Analysis) and it works in a top-down manner. The algorithm is an inverse order of AGNES. It begins with the root, in which all objects are included in a single cluster. At each step of iteration, the most heterogeneous cluster is divided into two. The process is iterated until all objects are in their own cluster.
+Or DIANA (Divise Analysis) works in a top-down manner. The algorithm is an inverse order of AGNES. It begins with the root, in which all objects are included in a single cluster. At each step of iteration, the most heterogeneous cluster is divided into two. The process is iterated until all objects are in their own cluster.  Divisive hierarchical clustering is good at identifying large clusters.  
 
-Divisive hierarchical clustering is good at identifying large clusters.
+Wine Review Case study hjas a large number of observartions which makes a great candidate for the Divisive Hierchical clustery analysis.
 
 # The Objective
 
@@ -41,15 +55,10 @@ Mean or average linkage clustering: It computes all pairwise dissimilarities bet
 Centroid linkage clustering: It computes the dissimilarity between the centroid for cluster 1 (a mean vector of length p variables) and the centroid for cluster 2.
 Ward’s minimum variance method: It minimizes the total within-cluster variance. At each step the pair of clusters with minimum between-cluster distance are merged.
 
-## Data Preparation
-Below are the main recommendations for using Hierarchical Clustering analysis:
-1. Rows are observations (individuals) and columns are variables
-2. Any missing value in the data must be removed or estimated.
-3. The data must be standardized (i.e., scaled) to make variables comparable.
+# Evaluation
+Let's determine the optimal clusters:
 
-# Determining Optimal Clusters
-
-## Elbow Method
+## Using Elbow Method
 The basic idea behind cluster partitioning methods is to define clusters such that the total intra-cluster variation (known as total within-cluster variation or total within-cluster sum of square) is minimized.
 
 The total within-cluster sum of square (wss) measures the compactness of the clustering and we want it to be as small as possible. So, we can use the following algorithm to define the optimal clusters:
