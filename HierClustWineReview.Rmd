@@ -1,0 +1,222 @@
+---
+title: "Unsupervise-HierClust WineReview"
+author: "Jairo Melo"
+date: '2019-02-24'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+## Installing packagaes:
+tidyverse: data manipulation
+cluster: clustering algorithms
+stats:  clustering algorithms
+factoextra: clustering visualization
+dendextend: for comparing two dendrograms
+
+```{r libraries, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#INSTALL AND LOAD PACKAGES ################################
+library(tidyverse)  # data manipulation
+library(cluster)    # clustering algorithms
+library(stats)    #   clustering algorithms
+library(factoextra) # clustering visualization
+library(dendextend) # for comparing two dendrograms
+
+```
+
+# Importing the data
+
+```{r importData, echo=FALSE}
+
+getwd()
+WRdata=read.csv("~/desktop/ML/YORK/Assigment2/wine-reviews/wine_data_coords.csv", header = TRUE, dec = ".", stringsAsFactors = FALSE)
+
+nrow(WRdata)
+#Removing any missing value that might be present in the WRdata
+WRdata <- na.omit(WRdata)
+nrow(WRdata)
+#Removing duplicated data
+##WRdata <- distinct(WRdata,points, price, variety, latitude, longitude, country, designation, province,description , region_1, winery)
+WRdata <- distinct(WRdata)
+nrow(WRdata)
+
+#Subset to only use predictors suitable for Cluster analysis
+WRclData <- WRdata[1:5000,c('points','price','latitude','longitude')]
+str(WRclData)
+
+```
+
+As we don’t want the clustering algorithm to depend to an arbitrary variable unit, we start by scaling/standardizing the data using the R function scale:
+
+```{r scale, echo=FALSE}
+WRclData <- scale(WRclData)
+
+str(WRclData)
+```
+
+# Agglomerative Hierarchical clustering
+This is a "bottom-up" approach: each observation starts in its own cluster, and pairs of clusters are merged as one moves up the hierarchy.
+
+First, we will find the dissimilatiry values and then use the distance matrix to run the Hierarchical clustering to plot the dendogram:
+
+```{r dis,echo=FALSE}
+WRdiss <- dist(WRclData, method = "euclidean")
+```
+The agglomeration method that can be used is (an unambiguous abbreviation of) one of "ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
+
+For our analysis, we will use Ward.D2:
+```{r hclust, echo=FALSE}
+WRhc_hclust <- hclust(WRdiss, method = "ward.D2" )
+```
+
+
+##  Cutting the Tree
+Each leaf of the Dendrogram corresponds to one observation. As we move up the tree, observations that are similar to each other are combined into branches, which are themselves fused at a higher height.
+
+The height of the vertical line or vertical axis, indicates the (dis)similarity between two observations.
+The higher the height of the vertical line/fusion, the less similar the observations are.
+
+Note: conclusions about the proximity of two observations can only be based on the height where branches containing those two observations first are fused. We cannot use the proximity of two observations along the horizontal axis as a criteria of their similarity.
+
+Let's cut the tree in 4 groups
+```{r cutting, echo=FALSE}
+# Cut tree into 4 groups
+sub_grp <- cutree(WRhc_hclust, k = 4)
+table(sub_grp)
+```
+
+Drawing the dendrogram with a border around the 4 clusters
+```{r plot_after_cut, echo=FALSE}
+plot(WRhc_hclust, cex = 0.5, hang = -1)
+rect.hclust(WRhc_hclust, k = 4, border = 2:5)
+```
+From the dendogram we are able to identify ......
+
+## Comparing between different Agglomerative methods:
+Using agnes we can calculate the Agglomerative coefficient.  The agglomerative coefficient measures the amount of clustering structure found (values closer to 1 suggest strong clustering structure)
+
+The Agglomerative coefficient allows us to find certain hierarchical clustering methods that can identify stronger clustering structures.  
+
+# methods to assess the coefficient
+average, single, complete and ward
+```{r all4, echo=FALSE}
+m <- c( "average", "single", "complete", "ward")
+names(m) <- c( "average", "single", "complete", "ward")
+
+# function to compute coefficient
+ac <- function(x) {
+  agnes(WRclData, method = x)$ac
+}
+map_dbl(m, ac)
+```
+From the table, we conclude that Ward is giving the highest Coefficient; and cut the tree at 4 groups.  Let's run the method and plot its results:
+```{r agnes, echo=FALSE}
+WRhc_agnes_ward <- agnes(WRclData, method = "ward")
+cutree(as.hclust(WRhc_agnes), k = 4)
+pltree(WRhc_agnes_ward, cex = 0.6, hang = -1, main = "Dendrogram of agnes") 
+```
+
+## Divisive Hierarchical Clustering
+This variant of hierarchical clustering is called top-down clustering or divisive clustering . We start at the top with all documents in one cluster. The cluster is split using a flat clustering algorithm. This procedure is applied recursively until each document is in its own singleton cluster.
+
+Let's run the Diana method and plot the results:
+
+```{r diana, echo=FALSE}
+
+#Exploring using gower--------------------
+
+# to perform different types of hierarchical clustering
+# package functions used: daisy(), diana(), clusplot()
+gower.dist <- daisy(WRdata[,''], metric = c("gower"))
+
+#Error: Error in `[.data.frame`(WRdata, , "") : undefined columns selected
+
+divisive.clust <- diana(as.matrix(gower.dist), 
+                  diss = TRUE, keep.diss = TRUE)
+plot(divisive.clust, main = "Divisive")
+#-----------------------------------------
+
+
+WRhc_diana <- diana(WRclData)
+# Divise coefficient
+WRhc_diana$dc
+cutree(as.hclust(WRhc_diana), k = 4)
+# plot dendrogram
+pltree(WRhc_diana, cex = 0.6, hang = -1, main = "Dendrogram of Divisive using Diana")
+```
+
+The height of the cut to the dendrogram controls the number of clusters obtained; similar to K-means, used to identified sub-groups.
+
+
+# Visualize
+Similar to how K-means represent the cluster, we can visualize the result in a scatter plot.
+```{r visual, echo=FALSE}
+fviz_cluster(list(data = WRclData, cluster = sub_grp))
+```
+
+# Determining Optimal Clusters
+
+## Elbow Method
+```{r elbow, echo=FALSE}
+fviz_nbclust(WRclData, FUN = hcut, method = "wss")
+```
+# Average Silhouette Method
+```{r silhoette, echo=FALSE}
+fviz_nbclust(WRclData, FUN = hcut, method = "silhouette")
+```
+# Gap Statistic Method
+```{r gap_statis, echo=FALSE}
+gap_stat <- clusGap(WRclData, FUN = hcut, nstart = 25, K.max = 10, B = 50)
+fviz_gap_stat(gap_stat)
+```
+
+# Further Analysis
+
+Let's also cutree output to add the the cluster each observation to the original data to drice further analysis against the nominal variables:
+```{r original_cut, echo=FALSE}
+##Limiting the original data to 5000 as per Clustering analysis.
+data <- WRdata[1:5000,]
+data %>%
+  mutate(cluster = sub_grp) %>%
+  head
+```
+
+## Let's plot the categorical variables by cluster
+
+# Cluster sizes
+```{r byCategory, echo=FALSE}
+
+sort(table(WRhc_hclust$clust))
+clust <- names(sort(table(WRhc_hclust$clust)))
+row.names(data[WRhc_hclust$clust==clust[1],])
+row.names(data[WRhc_hclust$clust==clust[2],])
+row.names(data[WRhc_hclust$clust==clust[3],])
+row.names(data[WRhc_hclust$clust==clust[4],])
+
+# Compare Variety by cluster in boxplot
+boxplot(data$points ~ WRhc_hclust$cluster,
+        xlab='Cluster', ylab='Points',
+        main='Points by Cluster')
+
+
+plot(data[data$clust==clust[1],'variety'])
+
+```
+
+
+## Conclusion
+Clustering is a very useful tool for data analysis in the unsupervised setting.
+Bellow are some items we must consider while performing hierarchical clustering analysis.
+
+  1. What dissimilarity measure should be used?
+  2. What type of linkage should be used?
+  3. Where should we cut the dendrogram in order to obtain clusters?
+
+Each of these decisions has a strong impact on the results obtained.
+
+We should try several different choices, and look for the one with the most useful or 
+interpretable solution. With these methods, there is no single right answer - any solution 
+that exposes some interesting aspects of the data should be considered.
+
