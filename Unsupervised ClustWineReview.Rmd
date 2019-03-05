@@ -201,12 +201,10 @@ boxplot(data$variety ~ WRhc_hclust$cluster,
         xlab='Cluster', ylab='Points',
         main='Points by Cluster')
 
-
-plot(data[data$clust==clust[1],'variety'])
-
-plot(data[WRhc_hclust$clust==clust[2],'variety'])
-
-plot(data)
+#Needs to resolve ploting the variable per cluster . This is the core of the analysis.  Interpret the cluster.
+#plot(data[data$clust==clust[1],'variety'])
+#plot(data[WRhc_hclust$clust==clust[2],'variety'])
+#plot(data)
 
 ```
 
