@@ -1,9 +1,11 @@
 ---
-title: "Unsupervise WineReview Analysis"
-author: "Jairo Melo"
+title: "Unsupervised Clustering Analysis Wine Review Dataset"
+author: "Retail Group: Jairo Melo, Vikram Khade, Ignacio Palma, Mahboob Jamil"
 date: '2019-02-24'
 output:
-  pdf_document: default
+  word_document: default
+  pdf_document:
+    latex_engine: xelatex
   html_document: default
 ---
 
@@ -87,9 +89,12 @@ table(sub_grp)
 ```
 
 Drawing the dendrogram with a border around the 4 clusters
+
 ```{r plot_after_cut, echo=FALSE}
+
 plot(WRhc_hclust, cex = 0.5, hang = -1)
 rect.hclust(WRhc_hclust, k = 4, border = 2:5)
+
 ```
 From the dendogram we are able to identify ......
 
@@ -98,8 +103,9 @@ Using agnes we can calculate the Agglomerative coefficient.  The agglomerative c
 
 The Agglomerative coefficient allows us to find certain hierarchical clustering methods that can identify stronger clustering structures.  
 
-# methods to assess the coefficient
-average, single, complete and ward
+# Methods to assess the coefficient
+We will compare the use coefficient from average, single, complete and ward to understand the differences between each method and select one to continue with our analysis:
+
 ```{r all4, echo=FALSE}
 m <- c( "average", "single", "complete", "ward")
 names(m) <- c( "average", "single", "complete", "ward")
@@ -115,10 +121,12 @@ From the table, we conclude that Ward is giving the highest Coefficient; and cut
 ward=  0.9996464 
 
 Let's run the method and plot its results:
+
 ```{r agnes, echo=FALSE}
 WRhc_agnes <- agnes(WRclData, method = "ward")
-cutree(as.hclust(WRhc_agnes), k = 4)
+group <- cutree(as.hclust(WRhc_agnes), k = 4)
 pltree(WRhc_agnes, cex = 0.6, hang = -1, main = "Dendrogram of agnes") 
+
 ```
 
 ## Divisive Hierarchical Clustering
@@ -136,11 +144,11 @@ plot(divisive.clust, main = "Divisive")
 # Divise coefficient
 divisive.clust$dc
 
-cutree(as.hclust(divisive.clust), k = 4)
 # plot dendrogram
 pltree(divisive.clust, cex = 0.6, hang = -1, main = "Dendrogram of Divisive using Diana")
 
 # Cut tree into 4 groups
+dev_group <- cutree(as.hclust(divisive.clust), k = 4)
 sub_grp <- cutree(divisive.clust, k = 4)
 
 ```
@@ -160,14 +168,19 @@ fviz_cluster(list(data = divisive.clust$diss , cluster = sub_grp))
 # Determining Optimal Clusters
 
 ## Elbow Method
+
 ```{r elbow, echo=FALSE}
 fviz_nbclust(divisive.clust$merge , FUN = hcut, method = "wss")
 ```
-# Average Silhouette Method
+
+## Average Silhouette Method
+
 ```{r silhoette, echo=FALSE}
 fviz_nbclust(divisive.clust$merge, FUN = hcut, method = "silhouette")
 ```
-# Gap Statistic Method
+
+## Gap Statistic Method
+
 ```{r gap_statis, echo=FALSE}
 gap_stat <- clusGap(divisive.clust$merge, FUN = hcut, nstart = 25, K.max = 10, B = 50)
 fviz_gap_stat(gap_stat)
@@ -197,13 +210,15 @@ row.names(data[WRhc_hclust$clust==clust[3],])
 row.names(data[WRhc_hclust$clust==clust[4],])
 
 # Compare Variety by cluster in boxplot
-boxplot(data$variety ~ WRhc_hclust$cluster,
-        xlab='Cluster', ylab='Points',
-        main='Points by Cluster')
+#boxplot(data$variety ~ WRhc_hclust$cluster,
+ #       xlab='Cluster', ylab='Points',
+  #      main='Points by Cluster')
 
-#Needs to resolve ploting the variable per cluster . This is the core of the analysis.  Interpret the cluster.
+#Needs to resolve the issue with ploting the variable per cluster
 #plot(data[data$clust==clust[1],'variety'])
+
 #plot(data[WRhc_hclust$clust==clust[2],'variety'])
+
 #plot(data)
 
 ```
