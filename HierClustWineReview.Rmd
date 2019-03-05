@@ -12,7 +12,6 @@ tidyverse: data manipulation
 cluster: clustering algorithms
 stats:  clustering algorithms
 factoextra: clustering visualization
-dendextend: for comparing two dendrograms
 
 ```{r libraries, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -22,7 +21,8 @@ library(tidyverse)  # data manipulation
 library(cluster)    # clustering algorithms
 library(stats)    #   clustering algorithms
 library(factoextra) # clustering visualization
-library(dendextend) # for comparing two dendrograms
+library(gower) # for using Gower to introduce categorical values with Hierarchical CLustering
+library(StatMatch) # for using Gower to introduce categorical values with Hierarchical CLustering
 ```
 
 # Importing the data
@@ -41,7 +41,7 @@ nrow(WRdata)
 WRdata <- distinct(WRdata)
 nrow(WRdata)
 
-#Subset to only use predictors suitable for Cluster analysis
+#Subset to only use predictors suitable for Agglomerative Hierarchical Cluster analysis
 WRclData <- WRdata[1:5000,c('points','price','latitude','longitude')]
 str(WRclData)
 
@@ -110,11 +110,15 @@ ac <- function(x) {
 }
 map_dbl(m, ac)
 ```
-From the table, we conclude that Ward is giving the highest Coefficient; and cut the tree at 4 groups.  Let's run the method and plot its results:
+
+From the table, we conclude that Ward is giving the highest Coefficient; and cut the tree at 4 groups.  
+ward=  0.9996464 
+
+Let's run the method and plot its results:
 ```{r agnes, echo=FALSE}
-WRhc_agnes_ward <- agnes(WRclData, method = "ward")
+WRhc_agnes <- agnes(WRclData, method = "ward")
 cutree(as.hclust(WRhc_agnes), k = 4)
-pltree(WRhc_agnes_ward, cex = 0.6, hang = -1, main = "Dendrogram of agnes") 
+pltree(WRhc_agnes, cex = 0.6, hang = -1, main = "Dendrogram of agnes") 
 ```
 
 ## Divisive Hierarchical Clustering
@@ -193,12 +197,16 @@ row.names(data[WRhc_hclust$clust==clust[3],])
 row.names(data[WRhc_hclust$clust==clust[4],])
 
 # Compare Variety by cluster in boxplot
-boxplot(data$points ~ WRhc_hclust$cluster,
+boxplot(data$variety ~ WRhc_hclust$cluster,
         xlab='Cluster', ylab='Points',
         main='Points by Cluster')
 
 
 plot(data[data$clust==clust[1],'variety'])
+
+plot(data[WRhc_hclust$clust==clust[2],'variety'])
+
+plot(data)
 
 ```
 
