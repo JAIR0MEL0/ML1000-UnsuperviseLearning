@@ -3,10 +3,10 @@ title: "Unsupervised Clustering Analysis Wine Review Dataset"
 author: "Retail Group: Jairo Melo, Vikram Khade, Ignacio Palma, Mahboob Jamil"
 date: '2019-02-24'
 output:
-  word_document: default
+  html_document: default
   pdf_document:
     latex_engine: xelatex
-  html_document: default
+  word_document: default
 ---
 
 ## Installing packagaes:
@@ -53,7 +53,6 @@ As we don’t want the clustering algorithm to depend to an arbitrary variable u
 
 ```{r scale, echo=FALSE}
 WRclData <- scale(WRclData)
-
 str(WRclData)
 ```
 
@@ -70,6 +69,7 @@ The agglomeration method that can be used is (an unambiguous abbreviation of) on
 For our analysis, we will use Ward.D2:
 ```{r hclust, echo=FALSE}
 WRhc_hclust <- hclust(WRdiss, method = "ward.D2" )
+
 ```
 
 
@@ -135,9 +135,9 @@ This variant of hierarchical clustering is called top-down clustering or divisiv
 Let's run the Diana method and plot the results:
 
 ```{r gower, echo=FALSE}
-
-WRdataG <- WRdata[1:5000,c('variety','country','points','price')]
+WRdataG <- WRdata[1:5000,c('variety','country','province','points','price')]
 g.dist <- gower.dist(WRdataG)
+
 divisive.clust <- diana(as.matrix(g.dist), diss = TRUE, keep.diss = TRUE)
 plot(divisive.clust, main = "Divisive")
 
@@ -149,15 +149,11 @@ pltree(divisive.clust, cex = 0.6, hang = -1, main = "Dendrogram of Divisive usin
 
 # Cut tree into 4 groups
 dev_group <- cutree(as.hclust(divisive.clust), k = 4)
-sub_grp <- cutree(divisive.clust, k = 4)
 
 ```
 
 The height of the cut to the dendrogram controls the number of clusters obtained; similar to K-means, used to identified sub-groups.
 
-
-# Visualize
-Similar to how K-means represent the cluster, we can visualize the result in a scatter plot.
 ```{r visual, echo=FALSE}
 #fviz_cluster(list(data = WRclData, cluster = sub_grp))
 
@@ -189,50 +185,101 @@ fviz_gap_stat(gap_stat)
 # Further Analysis
 
 Let's also cutree output to add the the cluster each observation to the original data to drice further analysis against the nominal variables:
+
+Let's see the distribution of the Clusters.
 ```{r original_cut, echo=FALSE}
 ##Limiting the original data to 5000 as per Clustering analysis.
 data <- WRdata[1:5000,]
-data %>%
-  mutate(cluster = sub_grp) %>%
-  head
+data_cl <- mutate(data, cluster = sub_grp)
+count(data_cl,cluster)
+```
+As we see the biggest cluster is the number 1.
+Cluster 1: 34.2%
+Cluster 2: 33.8%
+Cluster 3: 18%
+Cluster 4: 14%
+
+
+## Plotting in 3D
+How this looks like in 3D
+```{r threed_plot, echo=FALSE}
+library(scatterplot3d)
+scatterplot3d(x = data_cl$points, y = data_cl$cluster, z = data_cl$price)
+```
+From this chart, we can gather the cluster 1 and 2 has less distance between each observation, while the fourth cluster is a lot more spreadout.  Very interesting behavior of the third cluster.
+
+## Plot Country aganst Points
+Let's determine which Country has the biggest acceptance across the clusters.
+```{r country_point, echo=FALSE}
+ggplot(data_cl, aes(x=country, y = points, color = factor(cluster))) + geom_boxplot()
+```
+Wines from France has the biggest representation in the two biggest clusters, surprisely, Italy made it between the 3rd and 4th clusters.  What it calls the attention is that New Zealand seems to have a growing acceptance.
+
+## Plot Country by Price
+From our analysis, France has a great acceptance, at the same time, New Zealand has a potential for a growing market.  Let's see what price tell us.
+```{r var_point, echo=FALSE}
+ggplot(data_cl, aes(x=country, y = price, color = factor(cluster))) + geom_boxplot()
+```
+As expected as well; the most expensive wines are from European wines; however, New Zeland is not that remarkably expensive, which reinforce our previous assumption.
+
+## Variety by Points
+The Variety or type of wine plays a significant role in the type of wine produce by each region.  Each category has a predominant acceptance within the tasters.
+```{r var_price, echo=FALSE}
+ggplot(data_cl, aes(x=points, y = variety, color = factor(cluster))) + geom_point()
+```
+Interesting, Merlot has made a great come back since 1995; however, it has been mainly placed in the 4th cluste, similar to Sangiovese; at first thought, I might think to look into these two wines for future market, but we need to understand why they are under the two smallest clusters.  In the other hand Tempranillos are making a great impresion.  Spain is one of the best producers, and from our first chart, is quite well ranked within the wines and price of wines from spain are very raseable.  What calls my attention is the Cabernet Sauvignon and Malbec; which could be a great potential to open a market from South America. 
+
+# Varience by Price
+Let's analize the price per type of wine.
+```{r var_points, echo=FALSE}
+ggplot(data_cl, aes(x=price, y = variety, color = factor(cluster))) + geom_point()
+```
+Chardoney ranked as one of the highest it's also an expensive wine.  Depending of the region.  However, it's placed in the 3rd cluster.  Pinot is not a surprise to be at the top.  Again, temnpranillo making a great impresion on price.  We should make a film about wines in spain; that will boots people's interest even more.  But I'm definetly thinking on Tempranillos as a great candidate for next promotion.
+
+
+## Province most ranked
+Let's review people's opinion's about the Province; not all type of wines taste the same across the provinces; neither all the wines from the same province are the same.
+```{r pro_price, echo=FALSE}
+ggplot(data_cl, aes(x=points, y = province, color = factor(cluster))) + geom_boxplot()
+```
+Pretty much all the provinces are spreadout across the X axes.  Exept for one which is located in the 3rd cluster; which suspect it's one producing Cardoney from France.  Cardoney, potentially from France has a very high acceptance, but also has a range of price.  We'll need to drill down by Cluster 3 to appreciate better the name of the Province.
+
+## Price by Province
+
+```{r pro_point, echo=FALSE}
+
+ggplot(data_cl, aes(x=price, y = province, color = factor(cluster))) + geom_boxplot()
+```
+There is not much Province can tell us.  In this case, re-inforce what we discussed previously, cluster number 3 might be associated to Chardonnay and is a expensive wine, very likely coming from France.
+
+## What Cluster 1 can tell us:
+```{r big_cluster, echo=FALSE}
+data_cl1 <- data_cl[data_cl$cluster==1,]
+
+ggplot(data_cl1, aes(x=points, y = price, color = variety)) + geom_boxplot()
+```
+Tempranillos reinforced the decision; but one we didn't detect before is Malbec.  There is great potential for Malbec to get into the top wines.
+
+
+## Investigate what's in the Cluster 3
+As Chardonnay has not only great acceptance and also great price.  Great candidate to get it in the tables.
+```{r big_cluster, echo=FALSE}
+data_cl3 <- data_cl[data_cl$cluster==3,]
+ggplot(data_cl3, aes(x=points, y = price, color = variety)) + geom_boxplot()
 ```
 
-## Let's plot the categorical variables by cluster
 
-# Cluster sizes
-```{r byCategory, echo=FALSE}
+# Conclusion
 
-sort(table(WRhc_hclust$clust))
-clust <- names(sort(table(WRhc_hclust$clust)))
-row.names(data[WRhc_hclust$clust==clust[1],])
-row.names(data[WRhc_hclust$clust==clust[2],])
-row.names(data[WRhc_hclust$clust==clust[3],])
-row.names(data[WRhc_hclust$clust==clust[4],])
+## Wine investment
+From the Hierarchical Clustering Analysis we can detect that definetly Tempranillos from Spain, and Chardonnay and Pinot Noir from France are the best potential for import.  One wine not being mentioned, but consistently showing results in the scores is Malbec from Chile.  Not only a great wine, but the range of price.
 
-# Compare Variety by cluster in boxplot
-#boxplot(data$variety ~ WRhc_hclust$cluster,
- #       xlab='Cluster', ylab='Points',
-  #      main='Points by Cluster')
-
-#Needs to resolve the issue with ploting the variable per cluster
-#plot(data[data$clust==clust[1],'variety'])
-
-#plot(data[WRhc_hclust$clust==clust[2],'variety'])
-
-#plot(data)
-
-```
-
-
-## Conclusion
-Clustering is a very useful tool for data analysis in the unsupervised setting.
-Bellow are some items we must consider while performing hierarchical clustering analysis.
+## Analysis perspective
+Clustering is a very useful tool for data analysis in the unsupervised setting.  This experience made us consider the below questions more carefully during our analysis:
 
   1. What dissimilarity measure should be used?
   2. What type of linkage should be used?
   3. Where should we cut the dendrogram in order to obtain clusters?
-
-Each of these decisions has a strong impact on the results obtained.
 
 We should try several different choices, and look for the one with the most useful or 
 interpretable solution. With these methods, there is no single right answer - any solution 
