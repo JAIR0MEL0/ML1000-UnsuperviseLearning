@@ -3,10 +3,10 @@ title: "Unsupervised Clustering Analysis Wine Review Dataset"
 author: "Retail Group: Jairo Melo, Vikram Khade, Ignacio Palma, Mahboob Jamil"
 date: '2019-02-24'
 output:
-  html_document: default
+  word_document: default
   pdf_document:
     latex_engine: xelatex
-  word_document: default
+  html_document: default
 ---
 
 ## Installing packagaes:
@@ -72,6 +72,19 @@ WRhc_hclust <- hclust(WRdiss, method = "ward.D2" )
 
 ```
 
+# Determining Optimal Number of Clusters
+
+## Elbow Method
+
+```{r elbow_de, echo=FALSE}
+fviz_nbclust(WRhc_hclust$merge , FUN = hcut, method = "wss")
+```
+
+## Average Silhouette Method
+
+```{r silhoette_de, echo=FALSE}
+fviz_nbclust(WRhc_hclust$merge, FUN = hcut, method = "silhouette")
+```
 
 ##  Cutting the Tree
 Each leaf of the Dendrogram corresponds to one observation. As we move up the tree, observations that are similar to each other are combined into branches, which are themselves fused at a higher height.
@@ -81,19 +94,19 @@ The higher the height of the vertical line/fusion, the less similar the observat
 
 Note: conclusions about the proximity of two observations can only be based on the height where branches containing those two observations first are fused. We cannot use the proximity of two observations along the horizontal axis as a criteria of their similarity.
 
-Let's cut the tree in 4 groups
+Let's cut the tree in 3 groups as suggested by the Elbow and Silohouette methods
 ```{r cutting, echo=FALSE}
 # Cut tree into 4 groups
-sub_grp <- cutree(WRhc_hclust, k = 4)
+sub_grp <- cutree(WRhc_hclust, k = 3)
 table(sub_grp)
 ```
 
-Drawing the dendrogram with a border around the 4 clusters
+Drawing the dendrogram with a border around the 3 clusters
 
 ```{r plot_after_cut, echo=FALSE}
 
 plot(WRhc_hclust, cex = 0.5, hang = -1)
-rect.hclust(WRhc_hclust, k = 4, border = 2:5)
+rect.hclust(WRhc_hclust, k = 3, border = 2:5)
 
 ```
 From the dendogram we are able to identify ......
@@ -146,22 +159,10 @@ divisive.clust$dc
 
 # plot dendrogram
 pltree(divisive.clust, cex = 0.6, hang = -1, main = "Dendrogram of Divisive using Diana")
-
-# Cut tree into 4 groups
-dev_group <- cutree(as.hclust(divisive.clust), k = 4)
-
 ```
 
-The height of the cut to the dendrogram controls the number of clusters obtained; similar to K-means, used to identified sub-groups.
 
-```{r visual, echo=FALSE}
-#fviz_cluster(list(data = WRclData, cluster = sub_grp))
-
-fviz_cluster(list(data = divisive.clust$diss , cluster = sub_grp))
-
-```
-
-# Determining Optimal Clusters
+# Determining Optimal Number of Clusters for Divisive Hierarchical Clustering analysis
 
 ## Elbow Method
 
@@ -182,6 +183,23 @@ gap_stat <- clusGap(divisive.clust$merge, FUN = hcut, nstart = 25, K.max = 10, B
 fviz_gap_stat(gap_stat)
 ```
 
+
+## Cut tree into 4 groups
+As per the Elbow method, we identify K=4
+```{r dev_group, echo=FALSE}
+dev_group <- cutree(as.hclust(divisive.clust), k = 4)
+```
+
+The height of the cut to the dendrogram controls the number of clusters obtained; similar to K-means, used to identified sub-groups.
+
+```{r visual, echo=FALSE}
+#fviz_cluster(list(data = WRclData, cluster = sub_grp))
+
+fviz_cluster(list(data = divisive.clust$diss , cluster = dev_group))
+
+```
+
+
 # Further Analysis
 
 Let's also cutree output to add the the cluster each observation to the original data to drice further analysis against the nominal variables:
@@ -193,11 +211,8 @@ data <- WRdata[1:5000,]
 data_cl <- mutate(data, cluster = sub_grp)
 count(data_cl,cluster)
 ```
-As we see the biggest cluster is the number 1.
-Cluster 1: 34.2%
-Cluster 2: 33.8%
-Cluster 3: 18%
-Cluster 4: 14%
+As we see the biggest cluster is the number 1 and 4
+
 
 
 ## Plotting in 3D
@@ -253,7 +268,7 @@ ggplot(data_cl, aes(x=price, y = province, color = factor(cluster))) + geom_boxp
 There is not much Province can tell us.  In this case, re-inforce what we discussed previously, cluster number 3 might be associated to Chardonnay and is a expensive wine, very likely coming from France.
 
 ## What Cluster 1 can tell us:
-```{r big_cluster, echo=FALSE}
+```{r big_cluster1, echo=FALSE}
 data_cl1 <- data_cl[data_cl$cluster==1,]
 
 ggplot(data_cl1, aes(x=points, y = price, color = variety)) + geom_boxplot()
@@ -263,7 +278,7 @@ Tempranillos reinforced the decision; but one we didn't detect before is Malbec.
 
 ## Investigate what's in the Cluster 3
 As Chardonnay has not only great acceptance and also great price.  Great candidate to get it in the tables.
-```{r big_cluster, echo=FALSE}
+```{r big_cluster2, echo=FALSE}
 data_cl3 <- data_cl[data_cl$cluster==3,]
 ggplot(data_cl3, aes(x=points, y = price, color = variety)) + geom_boxplot()
 ```
