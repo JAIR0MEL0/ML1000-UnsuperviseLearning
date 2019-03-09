@@ -1,0 +1,342 @@
+---
+title: "Retail Group - Unisupervised Learning - Wine Review Assignment2"
+author: "Retail Group: Jairo Melo, Vikram Khade, Ignacio Palma, Mahboob Jamil"
+date: '2019-02-24'
+output:
+  word_document: default
+  pdf_document:
+    latex_engine: xelatex
+  html_document: default
+---
+
+## Installing packagaes:
+Please make sure the libraries are included:
+
+```{r libraries, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#INSTALL AND LOAD PACKAGES ################################
+library(tidyverse)  # data manipulation
+library(cluster)    # clustering algorithms
+library(stats)    #   clustering algorithms
+library(factoextra) # clustering visualization
+library(gower) # for using Gower to introduce categorical values with Hierarchical CLustering
+library(StatMatch) # for using Gower to introduce categorical values with Hierarchical CLustering
+library(dplyr)
+```
+
+# Importing the data
+
+```{r importData, echo=FALSE}
+
+getwd()
+WRdata=read.csv("~/desktop/ML/YORK/Assigment2/wine-reviews/wine_data_coords.csv", header = TRUE, dec = ".", stringsAsFactors = FALSE)
+WRdata <- select(WRdata,-X)
+nrow(WRdata)
+#Removing any missing value that might be present in the WRdata
+WRdata <- na.omit(WRdata)
+nrow(WRdata)
+#Removing duplicated data
+WRdata <- distinct(WRdata)
+nrow(WRdata)
+#21044
+
+trow <- nrow(WRdata)
+ncol(WRdata)
+
+
+#10522 Here is where the Dataset should be assigned to WRdata
+WRdata <- WRdata[seq(1,trow,2),]
+
+
+#********************************COPY FROM HERE TILL THE END**************************
+
+#Subset to only use predictors suitable for Agglomerative Hierarchical Cluster analysis
+WRclData <- WRdata[,c('points','price','latitude','longitude')]
+str(WRclData)
+nrow(WRdata)
+
+
+```
+#  For the Hierarchical Cluster Analysis we select:
+
+1. Points    Number
+2. Price     Number
+3. Latitude  Number
+4. Longitude Number
+
+
+As we don’t want the clustering algorithm to depend to an arbitrary variable unit, we start by scaling/standardizing the data using the R function scale:
+
+```{r scale, echo=FALSE}
+WRclData <- scale(WRclData)
+str(WRclData)
+```
+
+# Agglomerative Hierarchical clustering
+This is a "bottom-up" approach: each observation starts in its own cluster, and pairs of clusters are merged as one moves up the hierarchy.
+
+First, we will find the dissimilatiry values and then use the distance matrix to run the Hierarchical clustering to plot the dendogram:
+
+```{r dis,echo=FALSE}
+WRdiss <- dist(WRclData, method = "euclidean")
+```
+The agglomeration method that can be used is (an unambiguous abbreviation of) one of "ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
+
+For our analysis, we will use Ward.D2:
+WRhc_hclust <- hclust(WRdiss, method = "ward.D2" )
+```{r hclust, echo=FALSE}
+WRhc_hclust <- hclust(WRdiss, method = "ward.D2" )
+
+```
+
+# Determining Optimal Number of Clusters
+
+## Elbow Method
+
+```{r elbow_de, echo=FALSE}
+fviz_nbclust(WRhc_hclust$merge , FUN = hcut, method = "wss")
+```
+
+## Average Silhouette Method
+
+```{r silhoette_de, echo=FALSE}
+fviz_nbclust(WRhc_hclust$merge, FUN = hcut, method = "silhouette")
+```
+
+##  Cutting the Tree
+Each leaf of the Dendrogram corresponds to one observation. As we move up the tree, observations that are similar to each other are combined into branches, which are themselves fused at a higher height.
+
+The height of the vertical line or vertical axis, indicates the (dis)similarity between two observations.
+The higher the height of the vertical line/fusion, the less similar the observations are.
+
+Note: conclusions about the proximity of two observations can only be based on the height where branches containing those two observations first are fused. We cannot use the proximity of two observations along the horizontal axis as a criteria of their similarity.
+
+Let’s cut the tree in 3 groups, although Silhouette method suggested 2, we’ll have a better analysis when using 3.
+```{r cutting, echo=FALSE}
+# Cut tree into 4 groups
+sub_grp <- cutree(WRhc_hclust, k = 3)
+table(sub_grp)
+
+#See the original data per cluster
+data_hc <- mutate(data, cluster = sub_grp)
+count(data_hc,cluster)
+write.csv(data_hc,'hcl_data.csv')
+
+
+```
+
+Drawing the dendrogram with a border around the 3 clusters
+
+```{r plot_after_cut, echo=FALSE}
+
+plot(WRhc_hclust, cex = 0.5, hang = -1)
+rect.hclust(WRhc_hclust, k = 3, border = 2:5)
+
+```
+the dendogram we are able to identify the first Cluster has the majority of the observations.
+6610	62%
+1386	13%
+2526	24%
+Based on the rule 35% size of cluster, we can conclude HCluster might not be the best to interpret the data.  However, we will continue with our analysis and evaluate the Agglomerative method.
+
+## Comparing between different Agglomerative methods:
+Using agnes we can calculate the Agglomerative coefficient.  The agglomerative coefficient measures the amount of clustering structure found (values closer to 1 suggest strong clustering structure)
+
+The Agglomerative coefficient allows us to find certain hierarchical clustering methods that can identify stronger clustering structures.  
+
+# Methods to assess the coefficient
+We will compare the use coefficient from average, single, complete and ward to understand the differences between each method and select one to continue with our analysis:
+
+```{r all4, echo=FALSE}
+m <- c( "average", "single", "complete", "ward")
+names(m) <- c( "average", "single", "complete", "ward")
+
+# function to compute coefficient
+#ac <- function(x) {
+#  agnes(WRclData, method = x)$ac
+#}
+#Ran coefficient using a smaller data set for demostration
+#map_dbl(m, ac)
+# average    single  complete      ward 
+#0.9984433 0.9971121 0.9984540 0.9996464 
+```
+
+From the table, we conclude that Ward is giving the highest Coefficient; and cut the tree at 4 groups.  
+ward=  0.9996464 
+
+Let's run the method and plot its results:
+
+```{r agnes, echo=FALSE}
+WRhc_agnes <- agnes(WRclData, method = "ward")
+group <- cutree(as.hclust(WRhc_agnes), k = 4)
+pltree(WRhc_agnes, cex = 0.6, hang = -1, main = "Dendrogram of agnes") 
+
+```
+
+## Divisive Hierarchical Clustering
+This variant of hierarchical clustering is called top-down clustering or divisive clustering . We start at the top with all documents in one cluster. The cluster is split using a flat clustering algorithm. This procedure is applied recursively until each document is in its own singleton cluster.
+
+For this analysis we will use:
+1.	Variety     	Nominal
+2.	Country	Nominal
+3.	Province	Nominal
+4.	Points		Price
+
+We will find the distance through the gower function.
+
+Let's run the Diana method and plot the results:
+
+```{r gower, echo=FALSE}
+WRdataG <- WRdata[,c('variety','country','province','points','price')]
+g.dist <- gower.dist(WRdataG)
+
+divisive.clust <- diana(as.matrix(g.dist), diss = TRUE, keep.diss = TRUE)
+plot(divisive.clust, main = "Divisive")
+
+# Divise coefficient
+divisive.clust$dc
+
+# plot dendrogram
+pltree(divisive.clust, cex = 0.6, hang = -1, main = "Dendrogram of Divisive using Diana")
+```
+
+
+# Determining Optimal Number of Clusters for Divisive Hierarchical Clustering analysis
+
+## Elbow Method
+
+```{r elbow, echo=FALSE}
+fviz_nbclust(divisive.clust$merge , FUN = hcut, method = "wss")
+```
+
+## Average Silhouette Method
+
+```{r silhoette, echo=FALSE}
+fviz_nbclust(divisive.clust$merge, FUN = hcut, method = "silhouette")
+```
+
+## Gap Statistic Method
+
+```{r gap_statis, echo=FALSE}
+gap_stat <- clusGap(divisive.clust$merge, FUN = hcut, nstart = 25, K.max = 10, B = 50)
+fviz_gap_stat(gap_stat)
+```
+
+
+## Cut tree into 4 groups
+As per the Elbow method, we identify K=4
+```{r dev_group, echo=FALSE}
+dev_group <- cutree(as.hclust(divisive.clust), k = 4)
+```
+
+The height of the cut to the dendrogram controls the number of clusters obtained; similar to K-means, used to identified sub-groups.
+
+```{r visual, echo=FALSE}
+#fviz_cluster(list(data = WRclData, cluster = sub_grp))
+
+fviz_cluster(list(data = divisive.clust$diss , cluster = dev_group))
+
+```
+
+
+# Further Analysis
+
+Let's also cutree output to add the the cluster each observation to the original data to drice further analysis against the nominal variables:
+
+Let's see the distribution of the Clusters.
+```{r original_cut, echo=FALSE}
+##Creating data result set for all cluster analysis
+data <- WRdata
+data_cl <- mutate(data, cluster = dev_group)
+count(data_cl,cluster)
+write.csv(data_cl,'div_data.csv')
+
+```
+As we see the biggest cluster is the number 1 and 4
+
+## Plotting in 3D
+How this looks like in 3D
+```{r threed_plot, echo=FALSE}
+library(scatterplot3d)
+scatterplot3d(x = data_cl$points, y = data_cl$cluster, z = data_cl$price)
+```
+From this chart, we can gather the cluster 1 and 2 has less distance between each observation, while the fourth cluster is a lot more spreadout.  Very interesting behavior of the third cluster.
+
+## Plot Country aganst Points
+Let's determine which Country has the biggest acceptance across the clusters.
+```{r country_point, echo=FALSE}
+ggplot(data_cl, aes(x=country, y = points, color = factor(cluster))) + geom_boxplot()
+```
+Wines from France has the biggest representation in the two biggest clusters, surprisely, Italy made it between the 3rd and 4th clusters.  What it calls the attention is that New Zealand seems to have a growing acceptance.
+
+## Plot Country by Price
+From our analysis, France has a great acceptance, at the same time, New Zealand has a potential for a growing market.  Let's see what price tell us.
+```{r var_point, echo=FALSE}
+ggplot(data_cl, aes(x=country, y = price, color = factor(cluster))) + geom_boxplot()
+```
+As expected as well; the most expensive wines are from European wines; however, New Zeland is not that remarkably expensive, which reinforce our previous assumption.
+
+## Variety by Points
+The Variety or type of wine plays a significant role in the type of wine produce by each region.  Each category has a predominant acceptance within the tasters.
+```{r var_price, echo=FALSE}
+ggplot(data_cl, aes(x=points, y = variety, color = factor(cluster))) + geom_point()
+```
+Interesting, Merlot has made a great come back since 1995; however, it has been mainly placed in the 4th cluste, similar to Sangiovese; at first thought, I might think to look into these two wines for future market, but we need to understand why they are under the two smallest clusters.  In the other hand Tempranillos are making a great impresion.  Spain is one of the best producers, and from our first chart, is quite well ranked within the wines and price of wines from spain are very raseable.  What calls my attention is the Cabernet Sauvignon and Malbec; which could be a great potential to open a market from South America. 
+
+# Varience by Price
+Let's analize the price per type of wine.
+```{r var_points, echo=FALSE}
+ggplot(data_cl, aes(x=price, y = variety, color = factor(cluster))) + geom_point()
+```
+Chardoney ranked as one of the highest it's also an expensive wine.  Depending of the region.  However, it's placed in the 3rd cluster.  Pinot is not a surprise to be at the top.  Again, temnpranillo making a great impresion on price.  We should make a film about wines in spain; that will boots people's interest even more.  But I'm definetly thinking on Tempranillos as a great candidate for next promotion.
+
+
+## Province most ranked
+Let's review people's opinion's about the Province; not all type of wines taste the same across the provinces; neither all the wines from the same province are the same.
+```{r pro_price, echo=FALSE}
+ggplot(data_cl, aes(x=points, y = province, color = factor(cluster))) + geom_boxplot()
+```
+Pretty much all the provinces are spreadout across the X axes.  Exept for one which is located in the 3rd cluster; which suspect it's one producing Cardoney from France.  Cardoney, potentially from France has a very high acceptance, but also has a range of price.  We'll need to drill down by Cluster 3 to appreciate better the name of the Province.
+
+## Price by Province
+
+```{r pro_point, echo=FALSE}
+
+ggplot(data_cl, aes(x=price, y = province, color = factor(cluster))) + geom_boxplot()
+```
+There is not much Province can tell us.  In this case, re-inforce what we discussed previously, cluster number 3 might be associated to Chardonnay and is a expensive wine, very likely coming from France.
+
+## What Cluster 1 can tell us:
+```{r big_cluster1, echo=FALSE}
+data_cl1 <- data_cl[data_cl$cluster==1,]
+
+ggplot(data_cl1, aes(x=points, y = price, color = variety)) + geom_boxplot()
+```
+Tempranillos reinforced the decision; but one we didn't detect before is Malbec.  There is great potential for Malbec to get into the top wines.
+
+
+## Investigate what's in the Cluster 3
+As Chardonnay has not only great acceptance and also great price.  Great candidate to get it in the tables.
+```{r big_cluster2, echo=FALSE}
+data_cl3 <- data_cl[data_cl$cluster==3,]
+ggplot(data_cl3, aes(x=points, y = price, color = variety)) + geom_boxplot()
+```
+
+
+# Conclusion
+
+## Wine investment
+From the Hierarchical Clustering Analysis we can detect that definetly Tempranillos from Spain, and Chardonnay and Pinot Noir from France are the best potential for import.  One wine not being mentioned, but consistently showing results in the scores is Malbec from Chile.  Not only a great wine, but the range of price.
+
+## Analysis perspective
+Clustering is a very useful tool for data analysis in the unsupervised setting.  This experience made us consider the below questions more carefully during our analysis:
+
+  1. What dissimilarity measure should be used?
+  2. What type of linkage should be used?
+  3. Where should we cut the dendrogram in order to obtain clusters?
+
+We should try several different choices, and look for the one with the most useful or 
+interpretable solution. With these methods, there is no single right answer - any solution 
+that exposes some interesting aspects of the data should be considered.
+
