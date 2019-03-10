@@ -119,7 +119,7 @@ sub_grp <- cutree(WRhc_hclust, k = 3)
 table(sub_grp)
 
 #See the original data per cluster
-data <- WRclData
+data <- WRdata
 data_hc <- mutate(data, cluster = sub_grp)
 count(data_hc,cluster)
 write.csv(data_hc,'hcl_data.csv')
