@@ -1,0 +1,12 @@
+name: clusterwinereview
+title:
+username:
+account: jairomelo
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 778793
+bundleId: 1929259
+url: https://jairomelo.shinyapps.io/clusterwinereview/
+when: 1552257294.06466
+asMultiple: FALSE
+asStatic: FALSE
